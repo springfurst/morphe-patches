@@ -44,10 +44,15 @@ fun MutableMethod.returnNull() {
     addInstructions(0, "return-object v0")
 }
 
-/** Replace the body of a Boolean-returning method with `return Boolean.FALSE`. */
+/**
+ * Replace the body of an object-returning method with `return Boolean.FALSE`.
+ *
+ * Used for Kotlin `suspend` functions, whose bytecode return type is `Ljava/lang/Object;`
+ * (the coroutine state machine) even when the Kotlin signature returns `Boolean`.
+ */
 fun MutableMethod.returnFalseObject() {
-    require(returnType == "Ljava/lang/Boolean;") {
-        "returnFalseObject requires Ljava/lang/Boolean; return type, was $returnType on $name"
+    require(returnType.startsWith("L")) {
+        "returnFalseObject requires an object return type, was $returnType on $name"
     }
     addInstructions(
         0,
