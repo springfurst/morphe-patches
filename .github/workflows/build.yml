@@ -1,4 +1,4 @@
-name: Build all patches
+name: Build
 
 on:
   push:
@@ -6,15 +6,11 @@ on:
 
 jobs:
   build:
-    name: Build ${{ matrix.app }}
+    name: Build bundle
     permissions:
       contents: read
       packages: read
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        app: [nova-launcher]
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -27,11 +23,9 @@ jobs:
 
       # Git on Windows/macOS often loses the executable bit; never rely on it.
       - name: Make wrapper executable
-        working-directory: apps/${{ matrix.app }}
         run: chmod +x ./gradlew
 
       - name: Build bundle
-        working-directory: apps/${{ matrix.app }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: ./gradlew :patches:buildAndroid --no-daemon
@@ -39,6 +33,6 @@ jobs:
       - name: Upload bundle
         uses: actions/upload-artifact@v4
         with:
-          name: patches-${{ matrix.app }}
-          path: apps/${{ matrix.app }}/patches/build/libs/patches-*.mpp
+          name: patches-bundle
+          path: patches/build/libs/patches-*.mpp
           if-no-files-found: error

@@ -1,4 +1,4 @@
-rootProject.name = "nova-launcher-patches"
+rootProject.name = "morphe-patches"
 
 pluginManagement {
     repositories {

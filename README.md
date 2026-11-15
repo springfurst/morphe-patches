@@ -1,59 +1,87 @@
-# Morphe Patches (monorepo)
+# Morphe Patches
 
-Morphe patch bundles, one directory per app under `apps/`. Each app directory is a
-self-contained Morphe bundle (own Gradle wrapper, `settings.gradle.kts`, `patches/`
-module) that builds its own `.mpp` for Morphe.
+Morphe patch bundle for the apps I use — **one bundle, all apps**. Every app's patches live
+in their own package inside the single `:patches` module, so the build produces one
+`.mpp` that Morphe can install from a single source.
 
-| App | Directory | Package | Supported versions |
+| App | Package | Supported versions | Patches |
 |---|---|---|---|
-| Nova Launcher | [`apps/nova-launcher/`](apps/nova-launcher/) | `com.teslacoilsw.launcher` | `89700 (8.9.7)` |
+| Nova Launcher | `com.teslacoilsw.launcher` | `89700 (8.9.7)` | Enable Prime, Disable telemetry, Remove internet & tracking permissions |
+
+## Install (Morphe)
+
+```
+https://morphe.software/add-source?github=springfurst/morphe-patches
+```
+
+Then patch a stock APK of a supported version. Morphe re-signs the output, so uninstall the
+stock app first (back up your data). All three patches are enabled by default.
+
+### Nova Launcher: what it does
+
+- **Enable Prime** — starts the app in the Prime state and reports an active subscription,
+  so Prime-gated features work and the Play-licence revocation can't strip Prime from the
+  re-signed install. Ported from [hyzor/hyzor-morphe-patches](https://github.com/hyzor/hyzor-morphe-patches) (GPLv3).
+- **Disable telemetry** — no-ops Amplitude (incl. Session Replay), the Novalytics raw-data
+  upload, the ad-mediation config fetch, and the runtime re-enable of Firebase
+  Analytics/Crashlytics.
+- **Remove internet & tracking permissions** — drops `INTERNET`, Ad ID, install-referrer and
+  licence-check permissions, and disables Branch Search, Audience Network, FCM and GMS
+  measurement components.
+
+Offline behaviour: core launcher (home, drawer, gestures, widgets, local backup/restore,
+local search) is fully local. Weather, Nova Now promo cards, Sesame integrations, Nova AI
+and update checks stay empty offline — no crashes.
 
 ## Layout
 
 ```text
-morphe-patches/
-  apps/
-    nova-launcher/          # first app; copy this directory to add another
-      patches/
-        build.gradle.kts    # bundle identity (name, description, author)
-        src/main/kotlin/
-          dev/novaoffline/patches/
-            nova/shared/Constants.kt        Compatibility (package, versions, APK type)
-            nova/premium/                   Prime patch + fingerprints
-            nova/privacy/                   Telemetry + manifest patches
-            util/                           small DEX helpers shared by patches
-          util/PatchListGenerator.kt      generated patch list (release CI)
-      settings.gradle.kts
-      gradle.properties
-  .github/workflows/build.yml               builds every app's .mpp on push
+patches/
+  build.gradle.kts                     bundle identity (name, description, author)
+  src/main/kotlin/
+    dev/novaoffline/patches/
+      nova/shared/Constants.kt         compatibility (package, versions, APK type)
+      nova/premium/                    Nova: Enable Prime + fingerprints
+      nova/privacy/                    Nova: telemetry + manifest patches
+      util/                            small DEX helpers shared by patches
+    util/PatchListGenerator.kt         generates patches-list.json at release
+patches-bundle.json                    read by Morphe add-source (updated by the release workflow)
+.github/workflows/build.yml            builds the bundle on every push, uploads the .mpp
+.github/workflows/release.yml          tag `v*` -> GitHub release + patches-bundle.json
 ```
 
 ## Adding an app
 
-1. Copy `apps/nova-launcher/` to `apps/<new-app>/` and delete its `patches/src/.../nova/`
-   sources, replacing them with your app's patches (keep `util/` and `PatchListGenerator`).
-2. Update `apps/<new-app>/patches/build.gradle.kts` (`name`, `description`, `source`, `author`)
-   and `gradle.properties` (`version`).
-3. Add a row to the table above.
-4. Commit — the root CI builds the new app's bundle automatically (matrix over `apps/*`).
+1. Add `patches/src/main/kotlin/dev/novaoffline/patches/<app>/` with
+   `shared/Constants.kt` (a `Compatibility` for the package + target versions),
+   `<feature>/Fingerprints.kt` and `<feature>/<Name>Patch.kt`.
+2. Add a row to the table above.
+3. Commit — the same bundle now includes the new app; no workflow changes needed.
 
-## Publishing
+## Build locally
 
-Morphe's `add-source` expects **one repo per bundle**, so a monorepo cannot be added as a
-single source. Each directory under `apps/` is self-contained and can be split into its own
-repo with `git subtree split` — see [`docs/publishing.md`](docs/publishing.md).
-
-## Build (local)
-
-Each app builds independently (requires Java 21 and a GitHub token with
-`read:packages` for the Morphe registry — see the app README):
+Requires Java 21 and a GitHub token with `read:packages` (the Morphe registry needs auth even
+for its public packages):
 
 ```bash
-cd apps/nova-launcher
-./gradlew :patches:buildAndroid
-# output: patches/build/libs/patches-*.mpp
+export GITHUB_TOKEN=$(gh auth token)   # or GITHUB_ACTOR + GITHUB_TOKEN
+./gradlew :patches:buildAndroid --no-daemon
+# output: patches/build/libs/patches-<version>.mpp
 ```
 
-GitHub Actions (`.github/workflows/build.yml`) does this for every app on push and
-uploads the `.mpp` files as artifacts — enough to try a bundle before publishing it. When
-you add a directory under `apps/`, also add it to `matrix.app` in that workflow.
+## Releasing
+
+Bump `version` in `gradle.properties`, then:
+
+```bash
+git tag v1.0.0 && git push origin v1.0.0
+```
+
+`release.yml` builds the bundle, publishes it as a release asset, and rewrites
+`patches-bundle.json` so Morphe's `add-source` link resolves to the new build.
+
+## Licensing / credits
+
+GPLv3. Ported patches keep their upstream attribution in file headers. Nova's Prime patch
+derives from hyzor/hyzor-morphe-patches, which in turn ports rushiranpise/morphe-patches and
+hoo-dles/morphe-patches.

@@ -2,10 +2,10 @@ group = "dev.novaoffline"
 
 patches {
     about {
-        name = "Nova Offline Patches"
-        description = "Offline / telemetry-removal patches for Nova Launcher 8.9.7"
-        source = "https://github.com/USER/nova-offline-morphe-patches.git"
-        author = "nova-offline"
+        name = "Morphe Patches"
+        description = "Patches for the apps I use"
+        source = "https://github.com/springfurst/morphe-patches.git"
+        author = "springfurst"
         contact = "na"
         website = "na"
         license = "GPLv3"
