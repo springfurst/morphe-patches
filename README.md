@@ -2,7 +2,7 @@
 
 Morphe patch bundles, one directory per app under `apps/`. Each app directory is a
 self-contained Morphe bundle (own Gradle wrapper, `settings.gradle.kts`, `patches/`
-module, release workflow) that builds its own `.mpp` for Morphe.
+module) that builds its own `.mpp` for Morphe.
 
 | App | Directory | Package | Supported versions |
 |---|---|---|---|
@@ -25,7 +25,6 @@ morphe-patches/
           util/PatchListGenerator.kt      generated patch list (release CI)
       settings.gradle.kts
       gradle.properties
-      .github/workflows/release.yml         per-app release (reference; see root CI)
   .github/workflows/build.yml               builds every app's .mpp on push
 ```
 
@@ -37,6 +36,12 @@ morphe-patches/
    and `gradle.properties` (`version`).
 3. Add a row to the table above.
 4. Commit — the root CI builds the new app's bundle automatically (matrix over `apps/*`).
+
+## Publishing
+
+Morphe's `add-source` expects **one repo per bundle**, so a monorepo cannot be added as a
+single source. Each directory under `apps/` is self-contained and can be split into its own
+repo with `git subtree split` — see [`docs/publishing.md`](docs/publishing.md).
 
 ## Build (local)
 
@@ -50,5 +55,5 @@ cd apps/nova-launcher
 ```
 
 GitHub Actions (`.github/workflows/build.yml`) does this for every app on push and
-uploads the `.mpp` files as artifacts. Publishing a bundle to Morphe (GitHub release
-→ `add-source` link) is documented in each app's README.
+uploads the `.mpp` files as artifacts — enough to try a bundle before publishing it. When
+you add a directory under `apps/`, also add it to `matrix.app` in that workflow.

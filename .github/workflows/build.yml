@@ -25,11 +25,16 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
+      # Git on Windows/macOS often loses the executable bit; never rely on it.
+      - name: Make wrapper executable
+        working-directory: apps/${{ matrix.app }}
+        run: chmod +x ./gradlew
+
       - name: Build bundle
         working-directory: apps/${{ matrix.app }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: ./gradlew :patches:buildAndroid clean --no-daemon
+        run: ./gradlew :patches:buildAndroid --no-daemon
 
       - name: Upload bundle
         uses: actions/upload-artifact@v4

@@ -8,6 +8,7 @@ package dev.novaoffline.patches.nova.premium
 
 import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.fieldAccess
+import app.morphe.patcher.literal
 import app.morphe.patcher.methodCall
 import app.morphe.patcher.opcode
 import app.morphe.patcher.string
@@ -45,6 +46,7 @@ object PrimeStateInitFingerprint : Fingerprint(
     parameters = listOf("Landroid/content/SharedPreferences;"),
     filters = listOf(
         string("1"),
+        literal(0),
         methodCall(name = "getInt"),
         opcode(Opcode.MOVE_RESULT),
     ),
