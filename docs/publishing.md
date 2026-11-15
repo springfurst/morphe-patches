@@ -16,7 +16,13 @@ That is why every directory under `apps/` is self-contained: its own
 
 ## Split one app out into its own repo
 
-`git subtree split` produces a standalone history for a subdirectory:
+Helper script (does the split and the push):
+
+```bash
+./scripts/publish-app.sh nova-launcher git@github.com:OWNER/nova-launcher-patches.git
+```
+
+Manual equivalent — `git subtree split` produces a standalone history for a subdirectory:
 
 ```bash
 # from the monorepo root, on main
