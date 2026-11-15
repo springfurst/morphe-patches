@@ -1,0 +1,39 @@
+name: Build all patches
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build ${{ matrix.app }}
+    permissions:
+      contents: read
+      packages: read
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [nova-launcher]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Build bundle
+        working-directory: apps/${{ matrix.app }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./gradlew :patches:buildAndroid clean --no-daemon
+
+      - name: Upload bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: patches-${{ matrix.app }}
+          path: apps/${{ matrix.app }}/patches/build/libs/patches-*.mpp
+          if-no-files-found: error
